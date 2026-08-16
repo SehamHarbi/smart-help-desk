@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
 
 import models
@@ -18,9 +18,25 @@ class Ticket(BaseModel):
     category: str | None = None
     priority: str | None = None
 
+    @field_validator("priority")
+    @classmethod
+    def validate_priority(cls, value):
+        if value is not None and value not in ["Low", "Medium", "High"]:
+            raise ValueError("Priority must be Low, Medium, or High")
+        return value
+
 
 class TicketStatusUpdate(BaseModel):
     status: str
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, value):
+        if value not in ["Open", "In Progress", "Resolved"]:
+            raise ValueError(
+                "Status must be Open, In Progress, or Resolved"
+            )
+        return value
 
 
 def get_db():

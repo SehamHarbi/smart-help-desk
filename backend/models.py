@@ -1,4 +1,6 @@
-from sqlalchemy import Column, Integer, String, Text
+from datetime import datetime
+
+from sqlalchemy import Column, DateTime, Integer, String, Text
 from database import Base
 
 
@@ -11,3 +13,4 @@ class Ticket(Base):
     category = Column(String(100), nullable=True)
     priority = Column(String(50), nullable=True)
     status = Column(String(50), default="Open")
+    created_at = Column(DateTime, default=datetime.utcnow)

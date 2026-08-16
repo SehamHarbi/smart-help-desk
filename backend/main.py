@@ -1,7 +1,15 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+import models
+from database import engine, SessionLocal
+
 
 app = FastAPI()
+
+
+models.Base.metadata.create_all(bind=engine)
 
 
 class Ticket(BaseModel):
@@ -9,7 +17,13 @@ class Ticket(BaseModel):
     description: str
 
 
-tickets = []
+def get_db():
+    db = SessionLocal()
+
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 @app.get("/")
@@ -18,11 +32,19 @@ def home():
 
 
 @app.post("/tickets")
-def create_ticket(ticket: Ticket):
-    tickets.append(ticket)
-    return ticket
+def create_ticket(ticket: Ticket, db: Session = Depends(get_db)):
+    new_ticket = models.Ticket(
+        title=ticket.title,
+        description=ticket.description
+    )
+
+    db.add(new_ticket)
+    db.commit()
+    db.refresh(new_ticket)
+
+    return new_ticket
 
 
 @app.get("/tickets")
-def get_tickets():
-    return tickets
+def get_tickets(db: Session = Depends(get_db)):
+    return db.query(models.Ticket).all()

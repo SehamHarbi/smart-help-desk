@@ -58,18 +58,6 @@ class CommentCreate(BaseModel):
 class Ticket(BaseModel):
     title: str
     description: str
-    category: str | None = None
-    priority: str | None = None
-
-    @field_validator("priority")
-    @classmethod
-    def validate_priority(cls, value):
-        if value is not None and value not in ["Low", "Medium", "High"]:
-            raise ValueError(
-                "Priority must be Low, Medium, or High"
-            )
-
-        return value
 
 
 class TicketStatusUpdate(BaseModel):
@@ -182,11 +170,31 @@ def create_ticket(
         priority = ai_result["priority"]
         ai_suggestion = ai_result["suggestion"]
 
+        allowed_categories = [
+            "Hardware",
+            "Software",
+            "Network",
+            "Account",
+            "Other"
+        ]
+
+        allowed_priorities = [
+            "Low",
+            "Medium",
+            "High"
+        ]
+
+        if category not in allowed_categories:
+            category = "Other"
+
+        if priority not in allowed_priorities:
+            priority = None
+
     except Exception as e:
         print("AI analysis failed:", e)
 
-        category = ticket.category
-        priority = ticket.priority
+        category = None
+        priority = None
         ai_suggestion = None
 
     new_ticket = models.Ticket(

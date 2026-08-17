@@ -73,6 +73,38 @@ class TicketStatusUpdate(BaseModel):
 
         return value
 
+# Data an admin is allowed to send when correcting AI classification
+class TicketClassificationUpdate(BaseModel):
+    category: str
+    priority: str
+
+    # Only allow categories supported by our help desk
+    @field_validator("category")
+    @classmethod
+    def validate_category(cls, value):
+        allowed_categories = [
+            "Hardware",
+            "Software",
+            "Network",
+            "Account",
+            "Other"
+        ]
+
+        if value not in allowed_categories:
+            raise ValueError("Invalid ticket category")
+
+        return value
+
+    # Only allow our three supported priority levels
+    @field_validator("priority")
+    @classmethod
+    def validate_priority(cls, value):
+        if value not in ["Low", "Medium", "High"]:
+            raise ValueError(
+                "Priority must be Low, Medium, or High"
+            )
+
+        return value
 
 class UserCreate(BaseModel):
     name: str
@@ -517,3 +549,40 @@ def get_comments(
     )
 
     return comments
+
+# Admin can manually correct the AI-generated category and priority
+@app.put("/tickets/{ticket_id}/classification")
+def update_ticket_classification(
+    ticket_id: int,
+
+    # This model expects ONLY category + priority
+    update: TicketClassificationUpdate,
+
+    db: Session = Depends(get_db),
+
+    # require_admin blocks normal users with 403
+    current_admin: models.User = Depends(require_admin)
+):
+    # Find the ticket that the admin wants to update
+    ticket = (
+        db.query(models.Ticket)
+        .filter(models.Ticket.id == ticket_id)
+        .first()
+    )
+
+    # Return 404 if the ticket does not exist
+    if ticket is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Ticket not found"
+        )
+
+    # Override the AI-generated classification
+    ticket.category = update.category
+    ticket.priority = update.priority
+
+    # Save the changes to PostgreSQL
+    db.commit()
+    db.refresh(ticket)
+
+    return ticket

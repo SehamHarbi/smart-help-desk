@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 import models
 from database import SessionLocal, engine
+from ai_service import analyze_ticket
 
 
 load_dotenv()
@@ -171,12 +172,30 @@ def create_ticket(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
+    try:
+        ai_result = analyze_ticket(
+            ticket.title,
+            ticket.description
+        )
+
+        category = ai_result["category"]
+        priority = ai_result["priority"]
+        ai_suggestion = ai_result["suggestion"]
+
+    except Exception as e:
+        print("AI analysis failed:", e)
+
+        category = ticket.category
+        priority = ticket.priority
+        ai_suggestion = None
+
     new_ticket = models.Ticket(
         owner_id=current_user.id,
         title=ticket.title,
         description=ticket.description,
-        category=ticket.category,
-        priority=ticket.priority
+        category=category,
+        priority=priority,
+        ai_suggestion=ai_suggestion
     )
 
     db.add(new_ticket)
@@ -184,7 +203,6 @@ def create_ticket(
     db.refresh(new_ticket)
 
     return new_ticket
-
 
 @app.get("/tickets")
 def get_tickets(
@@ -225,10 +243,7 @@ def get_ticket(
 ):
     ticket = (
         db.query(models.Ticket)
-        .filter(
-            models.Ticket.id == ticket_id,
-            models.Ticket.owner_id == current_user.id
-        )
+        .filter(models.Ticket.id == ticket_id)
         .first()
     )
 
@@ -236,6 +251,15 @@ def get_ticket(
         raise HTTPException(
             status_code=404,
             detail="Ticket not found"
+        )
+
+    if (
+        current_user.role != "admin"
+        and ticket.owner_id != current_user.id
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="You do not have access to this ticket"
         )
 
     return ticket
@@ -485,28 +509,3 @@ def get_comments(
     )
 
     return comments
-
-@app.delete("/tickets/{ticket_id}")
-def delete_ticket(
-    ticket_id: int,
-    db: Session = Depends(get_db),
-    current_admin: models.User = Depends(require_admin)
-):
-    ticket = (
-        db.query(models.Ticket)
-        .filter(models.Ticket.id == ticket_id)
-        .first()
-    )
-
-    if ticket is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Ticket not found"
-        )
-
-    db.delete(ticket)
-    db.commit()
-
-    return {
-        "message": "Ticket deleted successfully"
-    }

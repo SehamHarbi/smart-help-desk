@@ -28,11 +28,13 @@ class Ticket(Base):
     category = Column(String(100), nullable=True)
     priority = Column(String(50), nullable=True)
     status = Column(String(50), default="Open")
+    ai_suggestion = Column(Text, nullable=True)
     created_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc)
     )
     is_archived = Column(Boolean, default=False)
+
 
 class Comment(Base):
     __tablename__ = "comments"

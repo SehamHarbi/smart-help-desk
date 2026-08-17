@@ -347,22 +347,35 @@ def update_ticket_status(
     ticket_id: int,
     update: TicketStatusUpdate,
     db: Session = Depends(get_db),
+
+    # Only admins are allowed to change ticket status
     current_admin: models.User = Depends(require_admin)
 ):
+    # Find the ticket by its ID
     ticket = (
         db.query(models.Ticket)
         .filter(models.Ticket.id == ticket_id)
         .first()
     )
 
+    # Make sure the ticket exists
     if ticket is None:
         raise HTTPException(
             status_code=404,
             detail="Ticket not found"
         )
 
+    # Archived tickets are read-only and cannot be modified
+    if ticket.is_archived:
+        raise HTTPException(
+            status_code=400,
+            detail="Archived tickets cannot be modified"
+        )
+
+    # Update the ticket status
     ticket.status = update.status
 
+    # Save the change to the database
     db.commit()
     db.refresh(ticket)
 
@@ -576,7 +589,12 @@ def update_ticket_classification(
             status_code=404,
             detail="Ticket not found"
         )
-
+    # Archived tickets are read-only and cannot be modified
+    if ticket.is_archived:
+        raise HTTPException(
+            status_code=400,
+            detail="Archived tickets cannot be modified"
+        )
     # Override the AI-generated classification
     ticket.category = update.category
     ticket.priority = update.priority

@@ -9,6 +9,9 @@ from passlib.context import CryptContext
 from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
 
+# Allows our React frontend to communicate with the FastAPI backend
+from fastapi.middleware.cors import CORSMiddleware
+
 import models
 from database import SessionLocal, engine
 from ai_service import analyze_ticket
@@ -18,6 +21,14 @@ load_dotenv()
 
 
 app = FastAPI()
+# Allow requests from our React development website
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 pwd_context = CryptContext(

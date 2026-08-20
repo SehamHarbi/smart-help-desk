@@ -5,7 +5,8 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 import "../App.css"
-
+import Header from "../components/Header"
+import Footer from "../components/Footer"
 
 function AdminDashboard() {
   const navigate = useNavigate()
@@ -19,28 +20,31 @@ function AdminDashboard() {
   // Store backend errors.
   const [error, setError] = useState("")
 
-  // Store which priority box is currently selected.
-  const [priorityFilter, setPriorityFilter] = useState("All")
+  // Admin dashboard filters.
+  const [priorityFilter, setPriorityFilter] =
+    useState("All")
 
-  // Store which ticket status is selected.
-  const [statusFilter, setStatusFilter] = useState("All")
+  const [statusFilter, setStatusFilter] =
+    useState("All")
 
-  // Store which category is selected.
-  const [categoryFilter, setCategoryFilter] = useState("All")
+  const [categoryFilter, setCategoryFilter] =
+    useState("All")
+
 
   // Read the logged-in admin from localStorage.
   const storedUser = localStorage.getItem("user")
+
   const user = storedUser
     ? JSON.parse(storedUser)
     : null
 
 
   // ========================================
-  // ACTIVE TICKET FILTERING
+  // ACTIVE TICKETS
   // ========================================
 
-  // The admin's main feed should only contain
-  // tickets that still need attention.
+  // Resolved tickets are intentionally excluded
+  // from the admin's daily workload.
   const activeTickets = tickets.filter(
     (ticket) =>
       ticket.status === "Open" ||
@@ -48,10 +52,7 @@ function AdminDashboard() {
   )
 
 
-  // ========================================
-  // ACTIVE TICKET COUNTS
-  // ========================================
-
+  // Count active tickets by priority.
   const highCount = activeTickets.filter(
     (ticket) => ticket.priority === "High"
   ).length
@@ -64,7 +65,7 @@ function AdminDashboard() {
     (ticket) => ticket.priority === "Low"
   ).length
 
-  // Tickets where the AI did not provide a priority.
+  // Tickets where AI did not provide a priority.
   const notClassifiedCount = activeTickets.filter(
     (ticket) => !ticket.priority
   ).length
@@ -78,8 +79,7 @@ function AdminDashboard() {
   let filteredTickets = activeTickets
 
 
-  // ----- Priority filter -----
-
+  // Filter by High / Medium / Low priority.
   if (
     priorityFilter === "High" ||
     priorityFilter === "Medium" ||
@@ -91,6 +91,8 @@ function AdminDashboard() {
     )
   }
 
+
+  // Filter tickets that were not classified by AI.
   if (priorityFilter === "Not Classified") {
     filteredTickets = filteredTickets.filter(
       (ticket) => !ticket.priority
@@ -98,8 +100,7 @@ function AdminDashboard() {
   }
 
 
-  // ----- Status filter -----
-
+  // Filter by Open or In Progress status.
   if (statusFilter !== "All") {
     filteredTickets = filteredTickets.filter(
       (ticket) =>
@@ -108,8 +109,7 @@ function AdminDashboard() {
   }
 
 
-  // ----- Category filter -----
-
+  // Filter by IT category.
   if (categoryFilter !== "All") {
     filteredTickets = filteredTickets.filter(
       (ticket) =>
@@ -127,13 +127,13 @@ function AdminDashboard() {
       const token =
         localStorage.getItem("access_token")
 
-      // Users without authentication must log in again.
+      // User must be authenticated.
       if (!token) {
         navigate("/")
         return
       }
 
-      // Normal users should not see the admin dashboard.
+      // Normal users cannot access the admin dashboard.
       if (user?.role !== "admin") {
         navigate("/dashboard")
         return
@@ -159,6 +159,7 @@ function AdminDashboard() {
           )
         }
 
+        // Save all tickets returned by FastAPI.
         setTickets(data)
 
       } catch (error) {
@@ -170,44 +171,25 @@ function AdminDashboard() {
     }
 
     loadTickets()
+
   }, [navigate, user?.role])
-
-
-  // ========================================
-  // LOG OUT
-  // ========================================
-
-  const handleLogout = () => {
-    localStorage.removeItem("access_token")
-    localStorage.removeItem("user")
-
-    navigate("/")
-  }
 
 
   return (
     <main className="dashboard-page">
 
-      {/* Admin navigation bar */}
-      <header className="dashboard-header">
-        <div>
-          <h1>Smart Help Desk</h1>
-          <p>Admin Portal</p>
-        </div>
-
-        <button
-          className="logout-button"
-          onClick={handleLogout}
-        >
-          Log out
-        </button>
-      </header>
+      {/* Shared application header.
+          Header handles logo, Home navigation, and Logout. */}
+      <Header />
 
 
       <section className="dashboard-content">
 
-        {/* Admin introduction */}
+        {/* =========================
+            ADMIN WELCOME
+            ========================= */}
         <div className="dashboard-welcome">
+
           <div>
             <h2>
               Support Dashboard
@@ -220,33 +202,49 @@ function AdminDashboard() {
               support requests.
             </p>
           </div>
+
         </div>
 
 
         {/* =========================
             ACTIVE TICKETS
             ========================= */}
-
         <section className="ticket-section">
 
-          <div className="admin-ticket-heading">
+          {/* Active workload heading
+              and Resolved History navigation */}
+          <div className="admin-ticket-heading admin-ticket-heading-row">
+
             <div>
-              <h3>Active Tickets</h3>
+              <h3>
+                Active Tickets
+              </h3>
 
               <p>
                 Tickets that still require
                 attention from IT Support.
               </p>
             </div>
+
+
+            <button
+              className="resolved-history-button"
+              onClick={() =>
+                navigate("/admin/resolved")
+              }
+            >
+              View Resolved History
+            </button>
+
           </div>
 
 
           {/* =========================
-              PRIORITY SUMMARY BOXES
+              PRIORITY SUMMARY
               ========================= */}
-
           <div className="priority-summary-grid">
 
+            {/* All active tickets */}
             <button
               className={`priority-summary-card priority-all ${
                 priorityFilter === "All"
@@ -257,7 +255,9 @@ function AdminDashboard() {
                 setPriorityFilter("All")
               }
             >
-              <span>All Active</span>
+              <span>
+                All Active
+              </span>
 
               <strong>
                 {activeTickets.length}
@@ -265,6 +265,7 @@ function AdminDashboard() {
             </button>
 
 
+            {/* High priority */}
             <button
               className={`priority-summary-card priority-high ${
                 priorityFilter === "High"
@@ -275,7 +276,9 @@ function AdminDashboard() {
                 setPriorityFilter("High")
               }
             >
-              <span>High</span>
+              <span>
+                High
+              </span>
 
               <strong>
                 {highCount}
@@ -283,6 +286,7 @@ function AdminDashboard() {
             </button>
 
 
+            {/* Medium priority */}
             <button
               className={`priority-summary-card priority-medium ${
                 priorityFilter === "Medium"
@@ -293,7 +297,9 @@ function AdminDashboard() {
                 setPriorityFilter("Medium")
               }
             >
-              <span>Medium</span>
+              <span>
+                Medium
+              </span>
 
               <strong>
                 {mediumCount}
@@ -301,6 +307,7 @@ function AdminDashboard() {
             </button>
 
 
+            {/* Low priority */}
             <button
               className={`priority-summary-card priority-low ${
                 priorityFilter === "Low"
@@ -311,7 +318,9 @@ function AdminDashboard() {
                 setPriorityFilter("Low")
               }
             >
-              <span>Low</span>
+              <span>
+                Low
+              </span>
 
               <strong>
                 {lowCount}
@@ -319,6 +328,7 @@ function AdminDashboard() {
             </button>
 
 
+            {/* AI classification failure */}
             <button
               className={`priority-summary-card priority-unclassified ${
                 priorityFilter === "Not Classified"
@@ -346,7 +356,6 @@ function AdminDashboard() {
           {/* =========================
               STATUS + CATEGORY FILTERS
               ========================= */}
-
           <div className="admin-filter-bar">
 
             {/* Status filters */}
@@ -356,44 +365,28 @@ function AdminDashboard() {
                 Status
               </span>
 
-              <button
-                className={`filter-button ${
-                  statusFilter === "All"
-                    ? "active-filter"
-                    : ""
-                }`}
-                onClick={() =>
-                  setStatusFilter("All")
-                }
-              >
-                All
-              </button>
 
-              <button
-                className={`filter-button ${
-                  statusFilter === "Open"
-                    ? "active-filter"
-                    : ""
-                }`}
-                onClick={() =>
-                  setStatusFilter("Open")
-                }
-              >
-                Open
-              </button>
+              {[
+                "All",
+                "Open",
+                "In Progress",
+              ].map((status) => (
 
-              <button
-                className={`filter-button ${
-                  statusFilter === "In Progress"
-                    ? "active-filter"
-                    : ""
-                }`}
-                onClick={() =>
-                  setStatusFilter("In Progress")
-                }
-              >
-                In Progress
-              </button>
+                <button
+                  key={status}
+                  className={`filter-button ${
+                    statusFilter === status
+                      ? "active-filter"
+                      : ""
+                  }`}
+                  onClick={() =>
+                    setStatusFilter(status)
+                  }
+                >
+                  {status}
+                </button>
+
+              ))}
 
             </div>
 
@@ -408,6 +401,7 @@ function AdminDashboard() {
                 Category
               </label>
 
+
               <select
                 id="category-filter"
                 value={categoryFilter}
@@ -417,6 +411,7 @@ function AdminDashboard() {
                   )
                 }
               >
+
                 <option value="All">
                   All Categories
                 </option>
@@ -458,6 +453,7 @@ function AdminDashboard() {
             </p>
           )}
 
+
           {error && (
             <p className="dashboard-error">
               {error}
@@ -465,13 +461,11 @@ function AdminDashboard() {
           )}
 
 
-          {/* =========================
-              EMPTY FILTER RESULT
-              ========================= */}
-
+          {/* No tickets match the current filters */}
           {!loading &&
             !error &&
             filteredTickets.length === 0 && (
+
               <div className="empty-tickets">
 
                 <h4>
@@ -484,95 +478,98 @@ function AdminDashboard() {
                 </p>
 
               </div>
+
             )}
 
 
           {/* =========================
               ACTIVE TICKET LIST
               ========================= */}
-
           <div className="ticket-list">
 
-            {filteredTickets.map(
-              (ticket) => (
-                <article
-                  className="ticket-card clickable-ticket-card"
-                  key={ticket.id}
+            {filteredTickets.map((ticket) => (
 
-                  onClick={() =>
-                    navigate(
-                      `/tickets/${ticket.id}`
-                    )
-                  }
-                >
+              <article
+                className="ticket-card clickable-ticket-card"
+                key={ticket.id}
 
-                  <div className="ticket-card-top">
+                // Open the selected ticket.
+                onClick={() =>
+                  navigate(
+                    `/tickets/${ticket.id}`
+                  )
+                }
+              >
 
-                    <div>
-                      <span className="ticket-number">
-                        Ticket #{ticket.id}
-                      </span>
+                <div className="ticket-card-top">
 
-                      <h4>
-                        {ticket.title}
-                      </h4>
-                    </div>
-
-
-                    <span
-                      className={`status-badge status-${ticket.status
-                        .toLowerCase()
-                        .replace(" ", "-")}`}
-                    >
-                      {ticket.status}
+                  <div>
+                    <span className="ticket-number">
+                      Ticket #{ticket.id}
                     </span>
 
+                    <h4>
+                      {ticket.title}
+                    </h4>
                   </div>
 
 
-                  <p className="ticket-description">
-                    {ticket.description}
-                  </p>
+                  {/* Current ticket status */}
+                  <span
+                    className={`status-badge status-${ticket.status
+                      .toLowerCase()
+                      .replace(" ", "-")}`}
+                  >
+                    {ticket.status}
+                  </span>
+
+                </div>
 
 
-                  <div className="ticket-meta">
-
-                    <span>
-                      User ID:{" "}
-                      <strong>
-                        {ticket.owner_id}
-                      </strong>
-                    </span>
+                <p className="ticket-description">
+                  {ticket.description}
+                </p>
 
 
-                    <span>
-                      Category:{" "}
-                      <strong>
-                        {ticket.category ||
-                          "Not classified"}
-                      </strong>
-                    </span>
+                <div className="ticket-meta">
+
+                  <span>
+                    User ID:{" "}
+                    <strong>
+                      {ticket.owner_id}
+                    </strong>
+                  </span>
 
 
-                    <span>
-                      Priority:{" "}
-                      <strong>
-                        {ticket.priority ||
-                          "Not classified"}
-                      </strong>
-                    </span>
+                  <span>
+                    Category:{" "}
+                    <strong>
+                      {ticket.category ||
+                        "Not classified"}
+                    </strong>
+                  </span>
 
-                  </div>
 
-                </article>
-              )
-            )}
+                  <span>
+                    Priority:{" "}
+                    <strong>
+                      {ticket.priority ||
+                        "Not classified"}
+                    </strong>
+                  </span>
+
+                </div>
+
+              </article>
+
+            ))}
 
           </div>
 
         </section>
 
       </section>
+     <Footer />
     </main>
   )
 }

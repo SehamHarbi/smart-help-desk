@@ -6,6 +6,8 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 import "../App.css"
+import Header from "../components/Header"
+import Footer from "../components/Footer"
 
 
 function ArchivedTickets() {
@@ -27,10 +29,10 @@ function ArchivedTickets() {
 
   useEffect(() => {
     const loadArchivedTickets = async () => {
-      // Get the JWT saved when the user logged in.
-      const token = localStorage.getItem("access_token")
+      const token =
+        localStorage.getItem("access_token")
 
-      // No token means the user must log in again.
+      // User must be logged in.
       if (!token) {
         navigate("/")
         return
@@ -51,11 +53,12 @@ function ArchivedTickets() {
 
         if (!response.ok) {
           throw new Error(
-            data.detail || "Unable to load archived tickets"
+            data.detail ||
+              "Unable to load archived tickets"
           )
         }
 
-        // Save the archived tickets so React can display them.
+        // Save archived tickets so React can display them.
         setTickets(data)
 
       } catch (error) {
@@ -70,58 +73,47 @@ function ArchivedTickets() {
   }, [navigate])
 
 
-  // ========================================
-  // LOG OUT
-  // ========================================
-
-  const handleLogout = () => {
-    localStorage.removeItem("access_token")
-    localStorage.removeItem("user")
-
-    navigate("/")
-  }
-
-
   return (
     <main className="dashboard-page">
 
-      {/* Same application header used on the user dashboard */}
-      <header className="dashboard-header">
-        <div>
-          <h1>Smart Help Desk</h1>
-          <p>IT Support Management</p>
-        </div>
-
-        <button
-          className="logout-button"
-          onClick={handleLogout}
-        >
-          Log out
-        </button>
-      </header>
+      {/* Shared application header.
+          Header handles logo, Home navigation, and Logout. */}
+      <Header />
 
 
       <section className="dashboard-content">
 
-        {/* Return to the normal user dashboard */}
+        {/* Return to the user's active tickets */}
         <button
           className="back-button"
-          onClick={() => navigate("/dashboard")}
+          onClick={() =>
+            navigate("/dashboard")
+          }
         >
           ← Back to My Tickets
         </button>
 
 
+        {/* =========================
+            ARCHIVED PAGE HEADING
+            ========================= */}
         <div className="archived-page-heading">
-          <h2>Archived Tickets</h2>
+
+          <h2>
+            Archived Tickets
+          </h2>
 
           <p>
             Resolved support requests you have archived.
           </p>
+
         </div>
 
 
-        {/* Waiting for FastAPI */}
+        {/* =========================
+            LOADING / ERROR
+            ========================= */}
+
         {loading && (
           <p className="dashboard-message">
             Loading archived tickets...
@@ -129,7 +121,6 @@ function ArchivedTickets() {
         )}
 
 
-        {/* Backend/network error */}
         {error && (
           <p className="dashboard-error">
             {error}
@@ -137,68 +128,127 @@ function ArchivedTickets() {
         )}
 
 
-        {/* No archived tickets */}
-        {!loading && !error && tickets.length === 0 && (
-          <p className="dashboard-message">
-            You don't have any archived tickets yet.
-          </p>
-        )}
+        {/* =========================
+            EMPTY ARCHIVE
+            ========================= */}
+
+        {!loading &&
+          !error &&
+          tickets.length === 0 && (
+
+            <div className="empty-tickets">
+
+              <h4>
+                No archived tickets
+              </h4>
+
+              <p>
+                You don't have any archived
+                support requests yet.
+              </p>
+
+            </div>
+
+          )}
 
 
-        {/* Archived ticket list */}
-        {!loading && !error && tickets.length > 0 && (
-          <div className="ticket-list">
+        {/* =========================
+            ARCHIVED TICKET LIST
+            ========================= */}
 
-            {tickets.map((ticket) => (
-              <article
-                key={ticket.id}
-                className="ticket-card clickable-ticket-card"
-                onClick={() =>
-                  navigate(`/tickets/${ticket.id}`)
-                }
-              >
-                <div className="ticket-card-header">
-                  <div>
-                    <span className="ticket-number">
-                      Ticket #{ticket.id}
+        {!loading &&
+          !error &&
+          tickets.length > 0 && (
+
+            <div className="ticket-list">
+
+              {tickets.map((ticket) => (
+
+                <article
+                  key={ticket.id}
+                  className="ticket-card clickable-ticket-card"
+
+                  // Tell TicketDetails that this ticket
+                  // was opened from Archived Tickets.
+                  //
+                  // This allows the Back button inside
+                  // TicketDetails to return here.
+                  onClick={() =>
+                    navigate(
+                      `/tickets/${ticket.id}`,
+                      {
+                        state: {
+                          from: "/archived",
+                          backLabel:
+                            "Archived Tickets",
+                        },
+                      }
+                    )
+                  }
+                >
+
+                  <div className="ticket-card-top">
+
+                    <div>
+                      <span className="ticket-number">
+                        Ticket #{ticket.id}
+                      </span>
+
+                      <h4>
+                        {ticket.title}
+                      </h4>
+                    </div>
+
+
+                    {/* Archived tickets should
+                        already be Resolved. */}
+                    <span
+                      className={`status-badge status-${ticket.status
+                        .toLowerCase()
+                        .replace(" ", "-")}`}
+                    >
+                      {ticket.status}
                     </span>
 
-                    <h3>{ticket.title}</h3>
                   </div>
 
-                  <span
-                    className={`status-badge status-${ticket.status
-                      .toLowerCase()
-                      .replace(" ", "-")}`}
-                  >
-                    {ticket.status}
-                  </span>
-                </div>
 
-                <p>{ticket.description}</p>
+                  <p className="ticket-description">
+                    {ticket.description}
+                  </p>
 
-                <div className="ticket-meta">
-                  <span>
-                    Category:{" "}
-                    <strong>
-                      {ticket.category || "Not classified"}
-                    </strong>
-                  </span>
 
-                  <span>
-                    Priority:{" "}
-                    <strong>
-                      {ticket.priority || "Not classified"}
-                    </strong>
-                  </span>
-                </div>
-              </article>
-            ))}
+                  <div className="ticket-meta">
 
-          </div>
-        )}
+                    <span>
+                      Category:{" "}
+                      <strong>
+                        {ticket.category ||
+                          "Not classified"}
+                      </strong>
+                    </span>
+
+
+                    <span>
+                      Priority:{" "}
+                      <strong>
+                        {ticket.priority ||
+                          "Not classified"}
+                      </strong>
+                    </span>
+
+                  </div>
+
+                </article>
+
+              ))}
+
+            </div>
+
+          )}
 
       </section>
+      <Footer />
     </main>
   )
 }

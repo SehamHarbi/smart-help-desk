@@ -6,6 +6,8 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 import "../App.css"
+import Header from "../components/Header"
+import Footer from "../components/Footer"
 
 
 function UserDashboard() {
@@ -22,12 +24,20 @@ function UserDashboard() {
 
   // Read the logged-in user's information from localStorage.
   const storedUser = localStorage.getItem("user")
-  const user = storedUser ? JSON.parse(storedUser) : null
+  const user = storedUser
+    ? JSON.parse(storedUser)
+    : null
+
+
+  // ========================================
+  // LOAD USER TICKETS
+  // ========================================
 
   useEffect(() => {
     const loadTickets = async () => {
       // Get the JWT that was saved after login.
-      const token = localStorage.getItem("access_token")
+      const token =
+        localStorage.getItem("access_token")
 
       // If there is no token, the user should not see the dashboard.
       if (!token) {
@@ -52,14 +62,17 @@ function UserDashboard() {
         // show the backend's message.
         if (!response.ok) {
           throw new Error(
-            data.detail || "Unable to load tickets"
+            data.detail ||
+              "Unable to load tickets"
           )
         }
 
         // Save the tickets so React can display them.
         setTickets(data)
+
       } catch (error) {
         setError(error.message)
+
       } finally {
         setLoading(false)
       }
@@ -68,36 +81,21 @@ function UserDashboard() {
     loadTickets()
   }, [navigate])
 
-  // Remove login information and return to login page.
-  const handleLogout = () => {
-    localStorage.removeItem("access_token")
-    localStorage.removeItem("user")
-
-    navigate("/")
-  }
 
   return (
     <main className="dashboard-page">
 
-      {/* Top navigation bar */}
-      <header className="dashboard-header">
-        <div>
-          <h1>Smart Help Desk</h1>
-          <p>IT Support Management</p>
-        </div>
+      {/* Shared application header */}
+      <Header />
 
-        <button
-          className="logout-button"
-          onClick={handleLogout}
-        >
-          Log out
-        </button>
-      </header>
 
       <section className="dashboard-content">
 
-        {/* Welcome area */}
+        {/* =========================
+            WELCOME AREA
+            ========================= */}
         <div className="dashboard-welcome">
+
           <div>
             <h2>
               Welcome, {user?.name || "User"}
@@ -108,28 +106,44 @@ function UserDashboard() {
             </p>
           </div>
 
-          {/* This button will open our ticket form later */}
-         <button
-           className="new-ticket-button"
-           onClick={() => navigate("/tickets/new")}
-         >
-           + New Ticket
-         </button>
+
+          {/* Open the new-ticket form */}
+          <button
+            className="new-ticket-button"
+            onClick={() =>
+              navigate("/tickets/new")
+            }
+          >
+            + New Ticket
+          </button>
+
         </div>
 
-        {/* Ticket section */}
-        <section className="ticket-section">
-          {/* Header for the active-ticket list */}
-<div className="tickets-section-header">
-  <h3>My Tickets</h3>
 
-  <button
-    className="archive-link-button"
-    onClick={() => navigate("/archived")}
-  >
-    View Archived Tickets
-  </button>
-</div>
+        {/* =========================
+            ACTIVE TICKET SECTION
+            ========================= */}
+        <section className="ticket-section">
+
+          <div className="tickets-section-header">
+
+            <h3>
+              My Tickets
+            </h3>
+
+
+            {/* Open the user's archived ticket history */}
+            <button
+              className="archive-link-button"
+              onClick={() =>
+                navigate("/archived")
+              }
+            >
+              View Archived Tickets
+            </button>
+
+          </div>
+
 
           {/* Loading state */}
           {loading && (
@@ -138,6 +152,7 @@ function UserDashboard() {
             </p>
           )}
 
+
           {/* Error state */}
           {error && (
             <p className="dashboard-error">
@@ -145,39 +160,59 @@ function UserDashboard() {
             </p>
           )}
 
+
           {/* Empty state */}
           {!loading &&
             !error &&
             tickets.length === 0 && (
+
               <div className="empty-tickets">
-                <h4>No active tickets</h4>
+
+                <h4>
+                  No active tickets
+                </h4>
+
                 <p>
-                  You don't currently have any active
-                  support requests.
+                  You don't currently have any
+                  active support requests.
                 </p>
+
               </div>
+
             )}
 
-          {/* Display every ticket returned by FastAPI */}
-          <div className="ticket-list">
-            {tickets.map((ticket) => (
-              <article
-               className="ticket-card clickable-ticket-card"
-               key={ticket.id}
 
-                // Open the details page for whichever ticket was clicked.
-             onClick={() =>
-              navigate(`/tickets/${ticket.id}`)
-              }
->
+          {/* =========================
+              USER TICKET LIST
+              ========================= */}
+          <div className="ticket-list">
+
+            {tickets.map((ticket) => (
+
+              <article
+                className="ticket-card clickable-ticket-card"
+                key={ticket.id}
+
+                // Open the selected ticket's details page.
+                onClick={() =>
+                  navigate(
+                    `/tickets/${ticket.id}`
+                  )
+                }
+              >
+
                 <div className="ticket-card-top">
+
                   <div>
                     <span className="ticket-number">
                       Ticket #{ticket.id}
                     </span>
 
-                    <h4>{ticket.title}</h4>
+                    <h4>
+                      {ticket.title}
+                    </h4>
                   </div>
+
 
                   {/* Ticket status */}
                   <span
@@ -187,33 +222,50 @@ function UserDashboard() {
                   >
                     {ticket.status}
                   </span>
+
                 </div>
+
 
                 <p className="ticket-description">
                   {ticket.description}
                 </p>
 
+
                 <div className="ticket-meta">
+
                   <span>
                     Category:{" "}
                     <strong>
-                      {ticket.category || "Not classified"}
+                      {ticket.category ||
+                        "Not classified"}
                     </strong>
                   </span>
+
 
                   <span>
                     Priority:{" "}
                     <strong>
-                      {ticket.priority || "Not classified"}
+                      {ticket.priority ||
+                        "Not classified"}
                     </strong>
                   </span>
+
                 </div>
+
               </article>
+
             ))}
+
           </div>
 
         </section>
+
       </section>
+
+
+      {/* Shared application footer */}
+      <Footer />
+
     </main>
   )
 }

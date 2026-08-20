@@ -7,19 +7,23 @@ import {
 } from "react-router-dom"
 
 import Login from "./pages/Login"
+import Register from "./pages/Register"
 import UserDashboard from "./pages/UserDashboard"
 import CreateTicket from "./pages/CreateTicket"
-// Page showing all information for one ticket.
 import TicketDetails from "./pages/TicketDetails"
-// Admin-only dashboard.
 import AdminDashboard from "./pages/AdminDashboard"
-
 import ArchivedTickets from "./pages/ArchivedTickets"
+import ResolvedTickets from "./pages/ResolvedTickets"
+
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+
+        {/* =========================
+            AUTHENTICATION
+            ========================= */}
 
         {/* Login page */}
         <Route
@@ -27,31 +31,63 @@ function App() {
           element={<Login />}
         />
 
+        {/* Create-account page */}
+        <Route
+          path="/register"
+          element={<Register />}
+        />
+
+
+        {/* =========================
+            USER PAGES
+            ========================= */}
+
         {/* User dashboard */}
         <Route
           path="/dashboard"
           element={<UserDashboard />}
         />
+
         {/* Page for submitting a new support ticket */}
         <Route
           path="/tickets/new"
           element={<CreateTicket />}
         />
-        {/* Dynamic route - ticketId changes depending on the ticket */}
+
+        {/* User's archived-ticket history */}
         <Route
-         path="/tickets/:ticketId"
-         element={<TicketDetails />}
+          path="/archived"
+          element={<ArchivedTickets />}
         />
 
+
+        {/* =========================
+            SHARED TICKET PAGE
+            ========================= */}
+
+        {/* Dynamic route:
+            ticketId changes depending on which ticket is opened */}
         <Route
-         path="/archived"
-        element={<ArchivedTickets />}
-      />
-        {/* Dashboard used by IT support administrators */}
-      <Route
-       path="/admin"
-       element={<AdminDashboard />}
-      />
+          path="/tickets/:ticketId"
+          element={<TicketDetails />}
+        />
+
+
+        {/* =========================
+            ADMIN PAGES
+            ========================= */}
+
+        {/* Main IT support dashboard */}
+        <Route
+          path="/admin"
+          element={<AdminDashboard />}
+        />
+
+        {/* Completed support-ticket history */}
+        <Route
+          path="/admin/resolved"
+          element={<ResolvedTickets />}
+        />
 
       </Routes>
     </BrowserRouter>

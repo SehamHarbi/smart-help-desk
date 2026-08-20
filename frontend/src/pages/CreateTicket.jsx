@@ -5,7 +5,8 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 import "../App.css"
-
+import Header from "../components/Header"
+import Footer from "../components/Footer"
 
 function CreateTicket() {
   const navigate = useNavigate()
@@ -18,15 +19,21 @@ function CreateTicket() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
-  // Runs when the user submits the ticket.
+
+  // ========================================
+  // CREATE NEW TICKET
+  // ========================================
+
   const handleSubmit = async (event) => {
+    // Prevent the browser from refreshing the page.
     event.preventDefault()
 
     setLoading(true)
     setError("")
 
     // Get the JWT created when the user logged in.
-    const token = localStorage.getItem("access_token")
+    const token =
+      localStorage.getItem("access_token")
 
     // A user without a token must log in again.
     if (!token) {
@@ -44,12 +51,14 @@ function CreateTicket() {
           headers: {
             "Content-Type": "application/json",
 
-            // Proves to FastAPI which user is creating the ticket.
+            // Proves to FastAPI which user
+            // is creating the ticket.
             Authorization: `Bearer ${token}`,
           },
 
           // The user only provides title and description.
-          // Category, priority and suggestion are handled by the AI.
+          // Category, priority, and AI suggestion
+          // are handled by the backend.
           body: JSON.stringify({
             title: title,
             description: description,
@@ -57,58 +66,82 @@ function CreateTicket() {
         }
       )
 
-      // Convert FastAPI's JSON response into JavaScript.
+      // Convert FastAPI's JSON response
+      // into JavaScript data.
       const data = await response.json()
 
-      if (!response.ok) {
-        throw new Error(
-          data.detail || "Unable to create ticket"
-        )
-      }
+     if (!response.ok) {
+  // FastAPI validation errors return "detail" as an array.
+  // Extract the readable message instead of showing [object Object].
+  if (Array.isArray(data.detail)) {
+  const message =
+    data.detail[0]?.msg ||
+    "Please check the information you entered"
 
-      // Ticket was successfully created.
-      // Return to the dashboard, which will fetch the updated list.
+  throw new Error(
+    message.replace(/^Value error,\s*/i, "")
+  )
+}
+
+  throw new Error(
+    data.detail || "Unable to create ticket"
+  )
+}
+
+      // Ticket was created successfully.
+      // Return to the dashboard, which will
+      // load the updated ticket list.
       navigate("/dashboard")
+
     } catch (error) {
       setError(error.message)
+
     } finally {
       setLoading(false)
     }
   }
 
+
   return (
     <main className="dashboard-page">
 
-      {/* Same application header used on the dashboard */}
-      <header className="dashboard-header">
-        <div>
-          <h1>Smart Help Desk</h1>
-          <p>IT Support Management</p>
-        </div>
-      </header>
+      {/* Shared application header.
+          Header handles logo, Home navigation, and Logout. */}
+      <Header />
+
 
       <section className="create-ticket-container">
 
-        {/* Return to the dashboard without creating a ticket */}
+        {/* Return to the user's active-ticket dashboard */}
         <button
           className="back-button"
-          onClick={() => navigate("/dashboard")}
+          onClick={() =>
+            navigate("/dashboard")
+          }
         >
           ← Back to My Tickets
         </button>
 
+
         <div className="create-ticket-card">
-          <h2>Create a support ticket</h2>
+
+          <h2>
+            Create a support ticket
+          </h2>
 
           <p className="create-ticket-subtitle">
-            Describe the problem you're experiencing and
-            we'll help route your request.
+            Describe the problem you're experiencing
+            and we'll help route your request.
           </p>
+
 
           <form onSubmit={handleSubmit}>
 
-            {/* Ticket title */}
+            {/* =========================
+                TICKET TITLE
+                ========================= */}
             <div className="form-group">
+
               <label htmlFor="title">
                 Title
               </label>
@@ -123,10 +156,15 @@ function CreateTicket() {
                 }
                 required
               />
+
             </div>
 
-            {/* Detailed description of the IT problem */}
+
+            {/* =========================
+                TICKET DESCRIPTION
+                ========================= */}
             <div className="form-group">
+
               <label htmlFor="description">
                 Description
               </label>
@@ -136,11 +174,15 @@ function CreateTicket() {
                 placeholder="Describe what is happening and any steps you already tried..."
                 value={description}
                 onChange={(event) =>
-                  setDescription(event.target.value)
+                  setDescription(
+                    event.target.value
+                  )
                 }
                 required
               />
+
             </div>
+
 
             {/* Only appears if ticket creation fails */}
             {error && (
@@ -149,7 +191,12 @@ function CreateTicket() {
               </p>
             )}
 
+
+            {/* =========================
+                FORM ACTIONS
+                ========================= */}
             <div className="ticket-form-actions">
+
               <button
                 type="button"
                 className="cancel-button"
@@ -160,6 +207,7 @@ function CreateTicket() {
                 Cancel
               </button>
 
+
               <button
                 type="submit"
                 className="new-ticket-button"
@@ -169,11 +217,16 @@ function CreateTicket() {
                   ? "Creating..."
                   : "Create Ticket"}
               </button>
+
             </div>
 
           </form>
+
         </div>
+
       </section>
+    <Footer />
+
     </main>
   )
 }

@@ -1,42 +1,68 @@
-// useState lets React remember values such as the email and password.
+// useState lets React remember the values entered into the form.
 import { useState } from "react"
 
-// Lets us redirect the user after successful login.
+// Lets us move between Register and Login.
 import { useNavigate } from "react-router-dom"
 
 import "../App.css"
 import logo from "../assets/smart help desk logo.png"
 
 
-function Login() {
-  // Store what the user types into the form.
+function Register() {
+  const navigate = useNavigate()
+
+  // Store the information entered by the user.
+  const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
 
-  // Store messages that we may need to show to the user.
-  const [error, setError] = useState("")
+  // Used for loading and error messages.
   const [loading, setLoading] = useState(false)
-
-  // Used to move the user to another page.
-  const navigate = useNavigate()
+  const [error, setError] = useState("")
 
 
   // ========================================
-  // LOGIN
+  // FORMAT BACKEND ERRORS
+  // ========================================
+
+  const getErrorMessage = (detail) => {
+    // Normal FastAPI errors are often plain strings.
+    if (typeof detail === "string") {
+      return detail
+    }
+
+    // Pydantic validation errors come back
+    // as an array of error objects.
+    if (Array.isArray(detail) && detail.length > 0) {
+  return detail
+    .map((item) =>
+      item.msg.replace(/^Value error,\s*/i, "")
+    )
+    .join(" ")
+}
+
+    // Fallback message if the response has
+    // an unexpected structure.
+    return "Unable to create account"
+  }
+
+
+  // ========================================
+  // CREATE ACCOUNT
   // ========================================
 
   const handleSubmit = async (event) => {
-    // Prevent the browser from refreshing the page.
+    // Prevent the browser from refreshing.
     event.preventDefault()
 
     setError("")
     setLoading(true)
 
     try {
-      // Send the email and password
-      // to our FastAPI /login endpoint.
+      // Send the new user's information
+      // to the FastAPI backend.
       const response = await fetch(
-        "http://127.0.0.1:8000/login",
+        "http://127.0.0.1:8000/users",
         {
           method: "POST",
 
@@ -45,53 +71,31 @@ function Login() {
           },
 
           body: JSON.stringify({
+            name: name,
             email: email,
             password: password,
           }),
         }
       )
 
-      // Convert FastAPI's JSON response
-      // back into JavaScript data.
       const data = await response.json()
 
-      // Show FastAPI's error if login fails.
+      // Show a readable backend error
+      // if registration fails.
       if (!response.ok) {
         throw new Error(
-          data.detail || "Login failed"
+          getErrorMessage(data.detail)
         )
       }
 
-      // Save the JWT so protected requests
-      // can use it later.
-      localStorage.setItem(
-        "access_token",
-        data.access_token
-      )
-
-      // Save basic information about
-      // the logged-in user.
-      localStorage.setItem(
-        "user",
-        JSON.stringify(data.user)
-      )
-
-      // Send admins and normal users
-      // to different dashboards.
-      if (data.user.role === "admin") {
-        navigate("/admin")
-      } else {
-        navigate("/dashboard")
-      }
+      // Account created successfully.
+      // Send the user back to Login.
+      navigate("/")
 
     } catch (error) {
-      // Show a friendly error instead of
-      // crashing the page.
       setError(error.message)
 
     } finally {
-      // Re-enable the button whether
-      // login succeeded or failed.
       setLoading(false)
     }
   }
@@ -125,21 +129,45 @@ function Login() {
 
 
         {/* =========================
-            LOGIN INTRODUCTION
+            REGISTER INTRODUCTION
             ========================= */}
+
         <h2>
-          Welcome back
+          Create account
         </h2>
 
         <p className="login-subtitle">
-          Sign in to manage your support tickets.
+          Create an account to submit and track
+          your IT support requests.
         </p>
 
 
         {/* =========================
-            LOGIN FORM
+            REGISTER FORM
             ========================= */}
+
         <form onSubmit={handleSubmit}>
+
+          {/* Name */}
+          <div className="form-group">
+
+            <label htmlFor="name">
+              Full name
+            </label>
+
+            <input
+              id="name"
+              type="text"
+              placeholder="Enter your full name"
+              value={name}
+              onChange={(event) =>
+                setName(event.target.value)
+              }
+              required
+            />
+
+          </div>
+
 
           {/* Email */}
           <div className="form-group">
@@ -152,13 +180,10 @@ function Login() {
               id="email"
               type="email"
               placeholder="name@company.com"
-
               value={email}
-
               onChange={(event) =>
                 setEmail(event.target.value)
               }
-
               required
             />
 
@@ -175,21 +200,18 @@ function Login() {
             <input
               id="password"
               type="password"
-              placeholder="Enter your password"
-
+              placeholder="Create a password"
               value={password}
-
               onChange={(event) =>
                 setPassword(event.target.value)
               }
-
               required
             />
 
           </div>
 
 
-          {/* Only appears when login fails */}
+          {/* Registration error */}
           {error && (
             <p className="login-error">
               {error}
@@ -197,30 +219,33 @@ function Login() {
           )}
 
 
+          {/* Create account button */}
           <button
             className="login-button"
             type="submit"
             disabled={loading}
           >
             {loading
-              ? "Signing in..."
-              : "Sign in"}
+              ? "Creating account..."
+              : "Create account"}
           </button>
 
         </form>
 
 
-        {/* Registration link will be connected later */}
+        {/* Return to Login */}
         <p className="register-text">
 
-          Don't have an account?{" "}
+          Already have an account?{" "}
 
           <span
-           className="register-link"
-           onClick={() => navigate("/register")}
-        >
-           Create account
-         </span>
+            className="register-link"
+            onClick={() =>
+              navigate("/")
+            }
+          >
+            Sign in
+          </span>
 
         </p>
 
@@ -230,4 +255,4 @@ function Login() {
   )
 }
 
-export default Login
+export default Register

@@ -6,7 +6,7 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, EmailStr
 from sqlalchemy.orm import Session
 
 # Allows our React frontend to communicate with the FastAPI backend
@@ -70,6 +70,40 @@ class Ticket(BaseModel):
     title: str
     description: str
 
+    @field_validator("title")
+    @classmethod
+    def validate_title(cls, value):
+        value = value.strip()
+
+        if len(value) < 3:
+            raise ValueError(
+                "Title must be at least 3 characters long"
+            )
+
+        if len(value) > 120:
+            raise ValueError(
+                "Title must be 120 characters or fewer"
+            )
+
+        return value
+
+    @field_validator("description")
+    @classmethod
+    def validate_description(cls, value):
+        value = value.strip()
+
+        if len(value) < 10:
+            raise ValueError(
+                "Description must be at least 10 characters long"
+            )
+
+        if len(value) > 2000:
+            raise ValueError(
+                "Description must be 2000 characters or fewer"
+            )
+
+        return value
+
 
 class TicketStatusUpdate(BaseModel):
     status: str
@@ -119,8 +153,40 @@ class TicketClassificationUpdate(BaseModel):
 
 class UserCreate(BaseModel):
     name: str
-    email: str
+    email: EmailStr
     password: str
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value):
+        value = value.strip()
+
+        if len(value) < 2:
+            raise ValueError(
+                "Name must be at least 2 characters long"
+            )
+
+        if len(value) > 100:
+            raise ValueError(
+                "Name must be 100 characters or fewer"
+            )
+
+        return value
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, value):
+        if len(value) < 8:
+            raise ValueError(
+                "Password must be at least 8 characters long"
+            )
+
+        if len(value) > 72:
+            raise ValueError(
+                "Password must be 72 characters or fewer"
+            )
+
+        return value
 
 
 class UserLogin(BaseModel):

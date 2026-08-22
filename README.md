@@ -7,6 +7,7 @@ Users can submit technical support requests, receive AI-generated troubleshootin
 ## Features
 
 ### User
+
 - Register and log in securely
 - Create support tickets
 - View personal support tickets
@@ -14,10 +15,11 @@ Users can submit technical support requests, receive AI-generated troubleshootin
 - View automatically assigned category and priority
 - Communicate with IT support through ticket conversations
 - Track ticket status
-- Archive resolved tickets
+- Optionally archive resolved tickets
 - View archived ticket history
 
 ### IT Support / Admin
+
 - View all active support tickets
 - View ticket counts by priority
 - Filter tickets by status and category
@@ -39,30 +41,39 @@ The AI analyzes the ticket title and description to:
 
 The AI-generated classification can still be changed by IT support staff when necessary.
 
-If the AI service is unavailable, the ticket is still created so that the support request is not lost.
+The application is also designed to handle AI service failures gracefully. If the AI service is temporarily unavailable, the support ticket is still created instead of being lost. The ticket can then be manually classified by IT support.
 
 ## Technology Stack
 
 ### Frontend
+
 - React
 - Vite
 - JavaScript
 - CSS
+- React Router
 
 ### Backend
+
 - Python
 - FastAPI
 - SQLAlchemy
 - Pydantic
 
 ### Database
+
 - PostgreSQL
 
-### Authentication
+### Authentication & Security
+
 - JWT authentication
 - Password hashing with bcrypt
+- Role-based access control
+- Protected API endpoints
+- Ticket ownership validation
 
 ### AI
+
 - OpenAI API
 
 ## Screenshots
@@ -145,8 +156,24 @@ Backend testing included:
 - Adding and retrieving ticket comments
 - Resolving and archiving tickets
 - Authorization checks between normal users and administrators
+- AI failure fallback behavior
+- Manual classification when AI analysis is unavailable
 
 ![Swagger API Documentation](screenshots/swagger-api.png)
+
+## Validation
+
+Server-side validation is used to reject invalid input before it is stored or processed.
+
+Validation includes:
+
+- Valid email address format
+- Duplicate email prevention
+- Password length requirements
+- Ticket title length requirements
+- Ticket description length requirements
+- Allowed ticket statuses
+- Allowed categories and priorities
 
 ## Project Structure
 
@@ -186,26 +213,63 @@ smart-help-desk/
 
 ### Backend
 
-Create and activate the Python virtual environment, install the required dependencies, configure the environment variables, and start FastAPI:
+Navigate to the backend directory:
 
 ```bash
-uvicorn main:app --reload
+cd backend
+```
+
+Activate the Python virtual environment.
+
+On Windows PowerShell:
+
+```powershell
+.\venv\Scripts\Activate.ps1
+```
+
+Start the FastAPI development server:
+
+```bash
+python -m uvicorn main:app --reload
+```
+
+The backend runs locally at:
+
+```text
+http://127.0.0.1:8000
+```
+
+Interactive Swagger API documentation is available at:
+
+```text
+http://127.0.0.1:8000/docs
 ```
 
 ### Frontend
 
-From the frontend directory:
+Open another terminal and navigate to the frontend directory:
+
+```bash
+cd frontend
+```
+
+Install the frontend dependencies if necessary:
 
 ```bash
 npm install
+```
+
+Start the Vite development server:
+
+```bash
 npm run dev
 ```
 
-The React application will then be available through the local Vite development server.
+Open the local address displayed by Vite in the browser.
 
 ## Environment Variables
 
-The backend uses environment variables for sensitive configuration such as:
+The backend uses environment variables for sensitive configuration:
 
 ```env
 DATABASE_URL=your_database_connection_string
@@ -213,8 +277,35 @@ SECRET_KEY=your_secret_key
 OPENAI_API_KEY=your_openai_api_key
 ```
 
-Sensitive `.env` files should not be committed to GitHub.
+Sensitive `.env` files should never be committed to GitHub.
+
+## Challenges and Solutions
+
+Several full-stack integration challenges were addressed during development:
+
+- **Authentication and authorization:** JWT-based authentication was implemented to protect API routes and distinguish between normal users and IT support administrators.
+- **Ticket access control:** Backend authorization prevents users from accessing support tickets belonging to other users.
+- **AI reliability:** Ticket creation continues even when the AI service is temporarily unavailable, preventing support requests from being lost.
+- **AI classification fallback:** Tickets that cannot be automatically classified can be manually categorized and prioritized by IT support.
+- **Role-based operations:** Administrative actions such as changing ticket classification and status are restricted to IT support accounts.
+- **Ticket lifecycle management:** Separate active, resolved, and archived views were implemented while preserving ticket history and conversations.
+- **Frontend and backend integration:** React communicates with the FastAPI REST API using authenticated requests while displaying backend validation and authorization errors to users.
 
 ## Purpose
 
-This project was developed as a portfolio project to demonstrate full-stack web development, REST API development, database integration, authentication and authorization, AI integration, and practical IT support workflow design.
+Smart Help Desk was developed as a hands-on learning project to strengthen my skills in full-stack software development and gain practical experience building a complete application from backend to frontend.
+
+Through this project, I gained experience with:
+
+- Full-stack web development
+- REST API design and development
+- Relational database integration
+- Authentication and authorization
+- Role-based access control
+- AI integration and failure handling
+- Input validation
+- Frontend and backend integration
+- Testing and debugging
+- Practical IT support workflow design
+
+The project provided an opportunity to apply these concepts together in a real-world-style system while learning how different parts of a full-stack application communicate and work together.

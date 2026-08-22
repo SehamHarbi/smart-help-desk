@@ -8,6 +8,8 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel, field_validator, EmailStr
 from sqlalchemy.orm import Session
+import logging
+logger = logging.getLogger(__name__)
 
 # Allows our React frontend to communicate with the FastAPI backend
 from fastapi.middleware.cors import CORSMiddleware
@@ -300,7 +302,7 @@ def create_ticket(
             priority = None
 
     except Exception as e:
-        print("AI analysis failed:", e)
+        logger.exception("AI analysis failed")
 
         category = None
         priority = None
